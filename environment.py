@@ -70,9 +70,9 @@ class FinancialMDP:
 		position = state % self.n_positions
 		return MarketTendency(market), MarketPositions(position)
 
-	def step(self, state: int, action: MarketActions) -> tuple[int, int]:
+	def step(self, state: int, action: MarketActions) -> tuple[int, float]:
 		"""
-			Executa ação e retorna próximo_estado, recompensa, done
+			Executa ação e retorna próximo_estado, recompensa
 		"""
 
 		market, position = self.decode_state(state)
