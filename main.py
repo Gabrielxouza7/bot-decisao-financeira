@@ -1,11 +1,19 @@
 from environment import FinancialMDP
 from bellman import value_iteration
 from qlearning import qlearning
+from data import build_from_ticker
 from evaluate import (plot_learning_curve, plot_value_map,
                       plot_policy, plot_trajectory, compare_gammas)
 
+# Constantes
+TICKER = 'AAPL'
+START  = '2023-01-01'
+END    = '2024-01-01'
+
 # Setup
-env = FinancialMDP(seed=42)
+transition = build_from_ticker(TICKER, start=START, end=END)
+
+env = FinancialMDP(seed=42, market_transition=transition)
 T, R = env.build_transition_reward_tables()
 
 # Bellman

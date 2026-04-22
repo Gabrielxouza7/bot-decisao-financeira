@@ -27,7 +27,7 @@ class FinancialMDP:
 	positions = list(MarketPositions)
 	actions = list(MarketActions)
 
-	def __init__(self, seed=42):
+	def __init__(self, seed=42, market_transition=None):
 		np.random.seed(seed)
 
 		self.n_tendencies = len(FinancialMDP.tendencies)
@@ -36,23 +36,26 @@ class FinancialMDP:
 
 		self.n_states = self.n_tendencies * self.n_positions
 
-		self.market_transition = {
-			MarketTendency.FALLING: {
-				MarketTendency.FALLING: 0.6,
-				MarketTendency.STABLE: 0.3,
-				MarketTendency.RISING: 0.1,
-			},
-			MarketTendency.STABLE: {
-				MarketTendency.FALLING: 0.2,
-				MarketTendency.STABLE: 0.6,
-				MarketTendency.RISING: 0.2,
-			},
-			MarketTendency.RISING: {
-				MarketTendency.FALLING: 0.1,
-				MarketTendency.STABLE: 0.3,
-				MarketTendency.RISING: 0.6,
+		if market_transition is None:
+			self.market_transition = {
+				MarketTendency.FALLING: {
+					MarketTendency.FALLING: 0.6,
+					MarketTendency.STABLE:  0.3,
+					MarketTendency.RISING:  0.1,
+				},
+				MarketTendency.STABLE: {
+					MarketTendency.FALLING: 0.2,
+					MarketTendency.STABLE:  0.6,
+					MarketTendency.RISING:  0.2,
+				},
+				MarketTendency.RISING: {
+					MarketTendency.FALLING: 0.1,
+					MarketTendency.STABLE:  0.3,
+					MarketTendency.RISING:  0.6,
+				}
 			}
-		}
+		else:
+			self.market_transition = market_transition
 
 		self.price_delta = {
 			MarketTendency.FALLING: -1.0,
