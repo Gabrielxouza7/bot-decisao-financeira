@@ -92,3 +92,43 @@ def compare_gammas(env: FinancialMDP, gammas=[0.7, 0.9, 0.99], n_episodes=1500):
     plt.tight_layout()
     plt.savefig('gamma_comparison.png', dpi=150)
     plt.show()
+
+def compare_epsilons(env: FinancialMDP, n_episodes=2000):
+    """
+    Compara três estratégias de exploração:
+    - ε fixo alto (sempre explora muito)
+    - ε fixo baixo (sempre explota)
+    - ε com decaimento (começa explorando, vai explotando)
+    """
+    from qlearning import qlearning
+
+    estrategias = [
+        {
+            'label': 'ε fixo alto (0.9)',
+            'params': dict(epsilon_start=0.9, epsilon_end=0.9, epsilon_decay=1.0)
+        },
+        {
+            'label': 'ε fixo baixo (0.1)',
+            'params': dict(epsilon_start=0.1, epsilon_end=0.1, epsilon_decay=1.0)
+        },
+        {
+            'label': 'ε com decaimento (1.0 → 0.05)',
+            'params': dict(epsilon_start=1.0, epsilon_end=0.05, epsilon_decay=0.995)
+        },
+    ]
+
+    window = 50
+    plt.figure(figsize=(10, 4))
+
+    for e in estrategias:
+        _, rewards, _ = qlearning(env, n_episodes=n_episodes, **e['params'])
+        smoothed = np.convolve(rewards, np.ones(window)/window, mode='valid')
+        plt.plot(smoothed, label=e['label'])
+
+    plt.xlabel('Episódio')
+    plt.ylabel('Recompensa (média móvel)')
+    plt.title('Comparação de Estratégias de Exploração (ε-greedy)')
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig('epsilon_comparison.png', dpi=150)
+    plt.show()

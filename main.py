@@ -3,7 +3,8 @@ from bellman import value_iteration
 from qlearning import qlearning
 from data import build_from_ticker
 from evaluate import (plot_learning_curve, plot_value_map,
-                      plot_policy, plot_trajectory, compare_gammas)
+                      plot_policy, plot_trajectory, compare_gammas,
+                      compare_epsilons)
 
 # Constantes
 TICKER = 'AAPL'
@@ -37,3 +38,6 @@ plot_trajectory(env, pi_ql)
 # Análise experimental
 print("\n=== Comparação de gamma ===")
 compare_gammas(env)
+
+print("\n=== Comparação de épsilon ===")
+compare_epsilons(env)
