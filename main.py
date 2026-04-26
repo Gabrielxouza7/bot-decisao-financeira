@@ -5,6 +5,8 @@ from data import build_from_ticker
 from evaluate import (plot_learning_curve, plot_value_map,
                       plot_policy, plot_trajectory, compare_gammas,
                       compare_epsilons, create_run_dir)
+import numpy as np
+import time
 
 # Constantes
 TICKER = 'AAPL'
@@ -15,15 +17,17 @@ END    = '2024-01-01'
 run_dir = create_run_dir()
 
 # Setup
-#transition = build_from_ticker(TICKER, start=START, end=END)
+transition = build_from_ticker(TICKER, start=START, end=END)
 
-env = FinancialMDP(seed=42)
+env = FinancialMDP(seed=42, market_transition=transition)
 T, R = env.build_transition_reward_tables()
 
 # ================= BELLMAN =================
 print("=== Value Iteration ===")
+t1 = time.time()
 V_star, pi_star, vi_history = value_iteration(env, T, R, gamma=0.9)
-
+t2 = time.time()
+print(f'Convergência em {(t2-t1)*1000:.0f}ms')
 print("V* =", V_star)
 print("π* (Bellman) =", pi_star)
 
@@ -32,10 +36,11 @@ plot_policy(pi_star, env.n_tendencies, env.n_positions, save_dir=run_dir)
 
 # ================= Q-LEARNING =================
 print("\n=== Q-learning ===")
-Q, rewards, epsilons = qlearning(env, n_episodes=2000, gamma=0.9)
-
-pi_ql = Q.argmax(axis=1)
-
+Q, rewards, epsilons = qlearning(env, n_episodes=5000, gamma=0.9)
+pi_ql = np.zeros(env.n_states, dtype=int)
+for state in range(env.n_states):
+    valid = env.valid_actions(env.decode_state(state)[1])
+    pi_ql[state] = max(valid, key=lambda a: Q[state, a])
 print("π* (Q-learning) =", pi_ql)
 
 plot_learning_curve(rewards, save_dir=run_dir)
