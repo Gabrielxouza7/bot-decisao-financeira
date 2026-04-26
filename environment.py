@@ -65,9 +65,9 @@ class FinancialMDP:
 					MarketTendency.RISING: 	-0.1,
 				},
 				MarketPositions.BOUGHT: {
-					MarketTendency.FALLING: -1.0,
+					MarketTendency.FALLING: -2.0,
 					MarketTendency.STABLE:  0.0,
-					MarketTendency.RISING:  2.0,
+					MarketTendency.RISING:  1.0,
 				}
 			},
 			MarketPositions.BOUGHT: {
@@ -77,9 +77,9 @@ class FinancialMDP:
 					MarketTendency.RISING:  -0.5,
 				},
 				MarketPositions.BOUGHT: {
-					MarketTendency.FALLING: -1.0,
+					MarketTendency.FALLING: -2.0,
 					MarketTendency.STABLE:  0.0,
-					MarketTendency.RISING:  2.0,
+					MarketTendency.RISING:  3.0,
 				}
 			}
 		}
