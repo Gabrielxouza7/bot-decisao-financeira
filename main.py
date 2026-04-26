@@ -4,6 +4,7 @@ from qlearning import qlearning
 from data import build_from_ticker
 from evaluate import (plot_learning_curve, plot_value_map,
                       plot_policy, plot_trajectory, compare_gammas)
+import numpy as np
 
 # Constantes
 TICKER = 'AAPL'
@@ -27,7 +28,10 @@ plot_policy(pi_star, env.n_tendencies, env.n_positions)
 # Q-learning
 print("\n=== Q-learning ===")
 Q, rewards, epsilons = qlearning(env, n_episodes=2000, gamma=0.9)
-pi_ql = Q.argmax(axis=1)
+pi_ql = np.zeros(env.n_states, dtype=int)
+for state in range(env.n_states):
+    valid = env.valid_actions(env.decode_state(state)[1])
+    pi_ql[state] = max(valid, key=lambda a: Q[state, a])
 print("π* (Q-learning) =", pi_ql)
 plot_learning_curve(rewards)
 plot_value_map(Q.max(axis=1), env.n_tendencies, env.n_positions)

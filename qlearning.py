@@ -27,14 +27,18 @@ def qlearning(
 		total_reward = 0.0
 
 		for _ in range(max_steps):
+			_, position = env.decode_state(state)
+
+			valid = env.valid_actions(position)
 			if np.random.random() < epsilon:
-				action = MarketActions(np.random.randint(env.n_actions))
+				action = MarketActions(np.random.choice(valid))
 			else:
-				action = MarketActions(np.argmax(Q[state]))
+				action = MarketActions(max(valid, key=lambda a: Q[state, a]))
 
 			next_state, reward = env.step(state, action)
 
-			best_next = np.max(Q[next_state])
+			valid_next_actions = env.valid_actions(env.decode_state(next_state)[1])
+			best_next = max(Q[next_state, a] for a in valid_next_actions)
 			Q[state, action.value] += alpha * (reward + (gamma * best_next) - Q[state, action.value])
 
 			total_reward += reward

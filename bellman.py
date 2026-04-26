@@ -25,10 +25,9 @@ def value_iteration(
 		V_old = V.copy()
 
 		for state in range(n_states):
-			q_values = []
-			for action in range(n_actions):
-				q = np.sum(T[state, action, :] * (R[state, action, :] + gamma * V_old))
-				q_values.append(q)
+			q_values = np.full(n_actions, -np.inf)
+			for action in env.valid_actions(env.decode_state(state)[1]):
+				q_values[action] = np.sum(T[state, action, :] * (R[state, action, :] + gamma * V))
 			V[state] = max(q_values)
 
 		delta = np.max(np.abs(V - V_old))
@@ -40,10 +39,9 @@ def value_iteration(
 
 	policy = np.zeros(n_states, dtype=int)
 	for state in range(n_states):
-		q_values = []
-		for action in range(n_actions):
-			q = np.sum(T[state, action, :] * (R[state, action, :] + gamma * V))
-			q_values.append(q)
+		q_values = np.full(n_actions, -np.inf)
+		for action in env.valid_actions(env.decode_state(state)[1]):
+			q_values[action] = np.sum(T[state, action, :] * (R[state, action, :] + gamma * V))
 		policy[state] = np.argmax(q_values)
 
 	return V, policy, history
