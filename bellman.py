@@ -8,11 +8,11 @@ def value_iteration(
 	gamma=0.9,
 	theta=1e-6,
 	max_iter=1000
-) -> tuple[np.ndarray, np.ndarray, list]:
+) -> tuple[np.ndarray, np.ndarray, list, int]:
 	"""
 		T: array [n_states, n_actions, n_states]
 		R: array [n_states, n_actions, n_states]
-		Retorna V* e política ótima π*
+		Retorna V*, política ótima π*, histórico de deltas e número de iterações
 	"""
 
 	n_states = env.n_states
@@ -35,6 +35,7 @@ def value_iteration(
 
 		if delta < theta:
 			print(f'Value Iteration convergiu em {iteration+1} iterações.')
+			n_iter = iteration + 1
 			break
 
 	policy = np.zeros(n_states, dtype=int)
@@ -44,4 +45,4 @@ def value_iteration(
 			q_values[action] = np.sum(T[state, action, :] * (R[state, action, :] + gamma * V))
 		policy[state] = np.argmax(q_values)
 
-	return V, policy, history
+	return V, policy, history, n_iter
