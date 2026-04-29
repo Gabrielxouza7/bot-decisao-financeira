@@ -51,9 +51,9 @@ print("\n[5/8] Gerando visualizações Bellman...")
 msg_convergence = plot_bellman_convergence(vi_history, n_iter, save_dir=run_dir)
 print(f"     {msg_convergence.split(chr(10))[0]}")
 plot_value_map(V_star, env.n_tendencies, env.n_positions, save_dir=run_dir, 
-               title="Mapa de Valores — Bellman V*")
+               title="Mapa de Valores — Bellman V*", method="bellman")
 plot_policy(pi_star, env.n_tendencies, env.n_positions, save_dir=run_dir,
-           title="Política Ótima — Bellman")
+           title="Política Ótima — Bellman", method = "bellman")
 print("     ✓ convergence, value_map, policy → PNG")
 
 # ================= Q-LEARNING (APRENDIZADO) =================
@@ -69,9 +69,9 @@ print("\n[7/8] Gerando visualizações Q-learning...")
 msg_qlearning = plot_learning_curve(rewards, save_dir=run_dir)
 print(f"     {msg_qlearning.split(chr(10))[0]}")
 plot_value_map(Q.max(axis=1), env.n_tendencies, env.n_positions, save_dir=run_dir,
-              title="Mapa de Valores — Q-learning V*")
+              title="Mapa de Valores — Q-learning V*", method = "qlearning")
 plot_policy(pi_ql, env.n_tendencies, env.n_positions, save_dir=run_dir,
-           title="Política Ótima — Q-learning")
+           title="Política Ótima — Q-learning", method = "qlearning")
 plot_trajectory(env, pi_ql, save_dir=run_dir, n_steps=50)
 print("     ✓ learning_curve, value_map, policy, trajectory → PNG")
 

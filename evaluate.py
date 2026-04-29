@@ -219,7 +219,7 @@ def plot_learning_curve(episode_rewards: list, save_dir, window=50, title="Q-lea
 
 
 # ================= PLOT: VALUE MAP (Melhorado) =================
-def plot_value_map(V: np.ndarray, n_market: int, n_positions: int, save_dir, title="Mapa de Valores"):
+def plot_value_map(V: np.ndarray, n_market: int, n_positions: int, method: str, save_dir, title="Mapa de Valores"):
     grid = V.reshape(n_market, n_positions)
     
     fig, ax = plt.subplots(figsize=(8, 5))
@@ -240,12 +240,12 @@ def plot_value_map(V: np.ndarray, n_market: int, n_positions: int, save_dir, tit
                    fontsize=12, fontweight='bold', color=color)
     
     plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, 'value_map.png'), dpi=150, bbox_inches='tight')
+    plt.savefig(os.path.join(save_dir, f'value_map_{method}.png'), dpi=150, bbox_inches='tight')
     plt.close()
 
 
 # ================= PLOT: POLICY (Melhorado) =================
-def plot_policy(policy: np.ndarray, n_market: int, n_positions: int, save_dir, title="Política Aprendida"):
+def plot_policy(policy: np.ndarray, n_market: int, n_positions: int, method: str, save_dir, title="Política Aprendida"):
     grid = policy.reshape(n_market, n_positions)
     
     fig, ax = plt.subplots(figsize=(8, 5))
@@ -269,7 +269,7 @@ def plot_policy(policy: np.ndarray, n_market: int, n_positions: int, save_dir, t
     ax.legend(handles=patches, loc='upper left', bbox_to_anchor=(1.05, 1), fontsize=10)
     
     plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, 'policy_map.png'), dpi=150, bbox_inches='tight')
+    plt.savefig(os.path.join(save_dir, f'policy_map_{method}.png'), dpi=150, bbox_inches='tight')
     plt.close()
 
 
@@ -325,7 +325,6 @@ def plot_trajectory(env: FinancialMDP, policy: np.ndarray, save_dir, n_steps=50)
     ax3.legend(fontsize=10)
     ax3.grid(True, alpha=0.3)
 
-    plt.tight_layout()
     plt.savefig(os.path.join(save_dir, 'trajectory.png'), dpi=150, bbox_inches='tight')
     plt.close()
 
