@@ -1,4 +1,4 @@
-from environment import FinancialMDP
+from environment import FinancialMDP, MarketActions, MarketPositions
 from bellman import value_iteration
 from qlearning import qlearning
 from data import build_from_ticker
@@ -12,6 +12,7 @@ from evaluate import (
     plot_trajectory, 
     compare_gammas,
     compare_epsilons, 
+    evaluate_policy,
     create_run_dir,
     generate_metrics_report
 )
@@ -22,10 +23,12 @@ print("=" * 70)
 print("  AGENTE INTELIGENTE DE DECISÃO FINANCEIRA — APRENDIZADO POR REFORÇO")
 print("=" * 70)
 
+dataOrigin = int(input('Selecione a origem dos dados:\n'+'1. Dados reais\n2. Dados fictícios\n\n'))
+
 # Constantes
-TICKER = 'AAPL'
-START  = '2023-01-01'
-END    = '2024-01-01'
+TICKER = 'IBM'
+START  = '2018-01-01'
+END    = '2020-01-01'
 
 # ================= SETUP =================
 print("\n[1/8] Criando diretório de execução...")
@@ -33,7 +36,7 @@ run_dir = create_run_dir()
 print(f"     ✓ {run_dir}")
 
 print("\n[2/8] Baixando e preparando dados...")
-transition = build_from_ticker(TICKER, start=START, end=END)
+transition = build_from_ticker(TICKER, start=START, end=END) if dataOrigin == 1 else None
 
 print("\n[3/8] Inicializando MDP...")
 env = FinancialMDP(seed=42, market_transition=transition)
@@ -58,7 +61,7 @@ print("     ✓ convergence, value_map, policy → PNG")
 
 # ================= Q-LEARNING (APRENDIZADO) =================
 print("\n[6/8] Executando Q-learning...")
-Q, rewards, epsilons = qlearning(env, n_episodes=5000, gamma=0.9)
+Q, rewards, epsilons = qlearning(env, n_episodes=10000, gamma=0.9)
 pi_ql = np.zeros(env.n_states, dtype=int)
 for state in range(env.n_states):
     valid = env.valid_actions(env.decode_state(state)[1])
@@ -90,12 +93,43 @@ print("     ✓ bellman_vs_qlearning_values, policies_comparison → PNG")
 # ================= EXPERIMENTOS AVANÇADOS =================
 print("\n[8/8] Rodando experimentos comparativos...")
 print("     • Comparando impact de γ (gamma)...")
-compare_gammas(env, save_dir=run_dir, gammas=[0.7, 0.9, 0.99], n_episodes=1500)
+compare_gammas(env, save_dir=run_dir, gammas=[0.3, 0.6, 0.99], n_episodes=10000)
 print("       ✓ gamma_comparison.png")
 
 print("     • Comparando estratégias de exploração (ε)...")
-compare_epsilons(env, save_dir=run_dir, n_episodes=2000)
+compare_epsilons(env, save_dir=run_dir, n_episodes=10000)
 print("       ✓ epsilon_comparison.png")
+
+# ================= EXPERIMENTOS COM OUTRAS ESTRATÉGIAS =================
+
+def ql_policy_fn(state, valid):
+    return int(pi_ql[state])
+
+def bellman_policy_fn(state, valid):
+    return int(pi_star[state])
+
+def cash_policy_fn(state, valid):
+    return int(MarketActions.KEEP.value)
+
+def buy_hold_policy_fn(state, valid):
+    _, pos = FinancialMDP.decode_state(state)
+    return int(MarketActions.BUY.value if pos == MarketPositions.NO_POSITION else MarketActions.KEEP.value)
+
+def random_policy_fn(state, valid):
+    return int(np.random.choice(valid))
+
+ql_mean, ql_std = evaluate_policy(env, ql_policy_fn)
+bh_mean, bh_std = evaluate_policy(env, bellman_policy_fn)
+cash_mean, cash_std = evaluate_policy(env, cash_policy_fn)
+bhld_mean, bhld_std = evaluate_policy(env, buy_hold_policy_fn)
+rnd_mean, rnd_std = evaluate_policy(env, random_policy_fn)
+
+print("\n[TEST] Comparação de políticas")
+print(f"  Q-learning   : {ql_mean:+.4f} ± {ql_std:.4f}")
+print(f"  Bellman      : {bh_mean:+.4f} ± {bh_std:.4f}")
+print(f"  Cash-only    : {cash_mean:+.4f} ± {cash_std:.4f}")
+print(f"  Buy & Hold   : {bhld_mean:+.4f} ± {bhld_std:.4f}")
+print(f"  Random       : {rnd_mean:+.4f} ± {rnd_std:.4f}")
 
 # ================= RELATÓRIO FINAL =================
 print("\n" + "=" * 70)
@@ -105,7 +139,11 @@ print("=" * 70)
 report = generate_metrics_report(
     V_star, pi_star, n_iter, vi_history,
     Q, rewards,
-    env.n_tendencies, env.n_positions,
+    ql_mean, ql_std,
+    bh_mean, bh_std,
+    cash_mean, cash_std,
+    bhld_mean, bhld_std,
+    rnd_mean, rnd_std,
     save_dir=run_dir, env=env
 )
 

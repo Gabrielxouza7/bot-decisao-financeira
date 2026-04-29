@@ -325,7 +325,6 @@ def plot_trajectory(env: FinancialMDP, policy: np.ndarray, save_dir, n_steps=50)
     ax3.legend(fontsize=10)
     ax3.grid(True, alpha=0.3)
 
-    plt.tight_layout()
     plt.savefig(os.path.join(save_dir, 'trajectory.png'), dpi=150, bbox_inches='tight')
     plt.close()
 
@@ -338,7 +337,7 @@ def compare_gammas(env: FinancialMDP, save_dir, gammas=[0.7, 0.9, 0.99], n_episo
 
     for gamma in gammas:
         _, rewards, _ = qlearning(env, n_episodes=n_episodes, gamma=gamma)
-        window = 50
+        window = 100
         smoothed = np.convolve(rewards, np.ones(window)/window, mode='valid')
         ax.plot(smoothed, label=f'γ = {gamma}', linewidth=2.5)
 
@@ -369,8 +368,8 @@ def compare_epsilons(env: FinancialMDP, save_dir, n_episodes=2000):
             'color': '#2ca02c'
         },
         {
-            'label': 'ε com decaimento (1.0 → 0.05)',
-            'params': dict(epsilon_start=1.0, epsilon_end=0.05, epsilon_decay=0.995),
+            'label': 'ε com decaimento (1.0 → 0.1)',
+            'params': dict(epsilon_start=1.0, epsilon_end=0.1, epsilon_decay=0.9995),
             'color': '#1f77b4'
         },
     ]
@@ -379,26 +378,51 @@ def compare_epsilons(env: FinancialMDP, save_dir, n_episodes=2000):
 
     for strategy in estrategias:
         _, rewards, _ = qlearning(env, n_episodes=n_episodes, **strategy['params'])
-        window = 50
+        window = 100
         smoothed = np.convolve(rewards, np.ones(window)/window, mode='valid')
         ax.plot(smoothed, label=strategy['label'], linewidth=2.5, color=strategy['color'])
 
     ax.set_xlabel('Episódio', fontsize=12, fontweight='bold')
     ax.set_ylabel('Recompensa (média móvel)', fontsize=12, fontweight='bold')
     ax.set_title('Comparação de Estratégias de Exploração (ε-greedy)', fontsize=13, fontweight='bold')
-    ax.legend(fontsize=11, loc='lower right')
+    ax.legend(fontsize=11, loc='best')
     ax.grid(True, alpha=0.3)
     
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, 'epsilon_comparison.png'), dpi=150, bbox_inches='tight')
     plt.close()
 
+# ================= AVALIAR UMA POLÍTICA GENÉRICA =================
+def evaluate_policy(env: FinancialMDP, policy_fn, n_episodes=100, max_steps=200):
+    episode_returns = []
+
+    for _ in range(n_episodes):
+        market = np.random.choice(FinancialMDP.tendencies)
+        state = FinancialMDP.encode_state(market, MarketPositions.NO_POSITION)
+        total = 0.0
+
+        for _ in range(max_steps):
+            _, position = FinancialMDP.decode_state(state)
+            valid = env.valid_actions(position)
+            action = int(policy_fn(state, valid))
+
+            next_state, reward = env.step(state, MarketActions(action))
+            total += reward
+            state = next_state
+
+        episode_returns.append(total)
+
+    return float(np.mean(episode_returns)), float(np.std(episode_returns))
 
 # ================= GERAR RELATÓRIO EM TEXTO =================
 def generate_metrics_report(
     V_bellman, policy_bellman, n_iter_bellman, history_bellman,
     Q_qlearning, episode_rewards, 
-    n_market, n_positions,
+    ql_mean, ql_std,
+    bh_mean, bh_std,
+    cash_mean, cash_std,
+    bhld_mean, bhld_std,
+    rnd_mean, rnd_std,
     save_dir, env: FinancialMDP
 ):
     """
@@ -426,7 +450,7 @@ def generate_metrics_report(
     
     report = f"""
 ╔════════════════════════════════════════════════════════════════╗
-║           RELATÓRIO DE MÉTRICAS — APRENDIZADO POR REFORÇO     ║
+║           RELATÓRIO DE MÉTRICAS — APRENDIZADO POR REFORÇO      ║
 ╚════════════════════════════════════════════════════════════════╝
 
 📊 BELLMAN (VALUE ITERATION - PLANEJAMENTO)
@@ -453,6 +477,14 @@ def generate_metrics_report(
   • Concordância de políticas: {agreement:.1f}%
   • Interpretação: Ambos os métodos convergiram para 
     a mesma solução ótima!
+
+🔄 COMPARAÇÃO COM OUTRAS ESTRATÉGIAS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  • Q-learning : {ql_mean:+.4f} ± {ql_std:.4f}
+  • Bellman    : {bh_mean:+.4f} ± {bh_std:.4f}
+  • Cash-only  : {cash_mean:+.4f} ± {cash_std:.4f}
+  • Buy & Hold : {bhld_mean:+.4f} ± {bhld_std:.4f}
+  • Random     : {rnd_mean:+.4f} ± {rnd_std:.4f}
 
 📈 ANÁLISE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

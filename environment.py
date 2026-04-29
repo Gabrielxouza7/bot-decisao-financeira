@@ -27,8 +27,9 @@ class FinancialMDP:
 	positions = list(MarketPositions)
 	actions = list(MarketActions)
 
-	def __init__(self, seed=42, market_transition=None):
-		np.random.seed(seed)
+	def __init__(self, seed=None, market_transition=None):
+		if seed:
+			np.random.seed(seed)
 
 		self.n_tendencies = len(FinancialMDP.tendencies)
 		self.n_positions = len(FinancialMDP.positions)

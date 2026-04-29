@@ -8,14 +8,15 @@ def qlearning(
 	alpha=0.1,
 	gamma=0.9,
 	epsilon_start=1.0,
-	epsilon_end=0.05,
-	epsilon_decay=0.995
+	epsilon_end=0.1,
+	epsilon_decay=0.9995
 ) -> tuple[np.ndarray, list, list]:
 	"""
 		Retorna Q-table, recompensas por episódio e histórico de epsilon
 	"""
 
-	Q = np.zeros((env.n_states, env.n_actions))
+	Q = np.full((env.n_states, env.n_actions), 1e-3, dtype=float)
+	visit_counts = np.zeros((env.n_states, env.n_actions), dtype=int)
 	episode_rewards = []
 	epsilons = []
 	epsilon = epsilon_start
@@ -39,7 +40,11 @@ def qlearning(
 
 			valid_next_actions = env.valid_actions(env.decode_state(next_state)[1])
 			best_next = max(Q[next_state, a] for a in valid_next_actions)
-			Q[state, action.value] += alpha * (reward + (gamma * best_next) - Q[state, action.value])
+
+			visit_counts[state, action.value] += 1
+			new_alpha = alpha / np.sqrt(visit_counts[state, action.value])
+
+			Q[state, action.value] += new_alpha * (reward + (gamma * best_next) - Q[state, action.value])
 
 			total_reward += reward
 			state = next_state
