@@ -27,8 +27,9 @@ class FinancialMDP:
 	positions = list(MarketPositions)
 	actions = list(MarketActions)
 
-	def __init__(self, seed=42, market_transition=None):
-		np.random.seed(seed)
+	def __init__(self, seed=None, market_transition=None):
+		if seed:
+			np.random.seed(seed)
 
 		self.n_tendencies = len(FinancialMDP.tendencies)
 		self.n_positions = len(FinancialMDP.positions)
@@ -86,12 +87,14 @@ class FinancialMDP:
 
 		self.transaction_cost = 0.25
 
-	def encode_state(self, market: MarketTendency, position: MarketPositions) -> int:
-		return market.value * self.n_positions + position.value
+	@staticmethod
+	def encode_state(market: MarketTendency, position: MarketPositions) -> int:
+		return market.value * (len(FinancialMDP.positions)) + position.value
 
-	def decode_state(self, state: int) -> tuple[MarketTendency, MarketPositions]:
-		market = state // self.n_positions
-		position = state % self.n_positions
+	@staticmethod
+	def decode_state(state: int) -> tuple[MarketTendency, MarketPositions]:
+		market = state // (len(FinancialMDP.positions))
+		position = state % (len(FinancialMDP.positions))
 		return MarketTendency(market), MarketPositions(position)
 
 	def valid_actions(self, position: MarketPositions) -> list[int]:
@@ -105,7 +108,7 @@ class FinancialMDP:
 			Executa ação e retorna próximo_estado, recompensa
 		"""
 
-		market, position = self.decode_state(state)
+		market, position = FinancialMDP.decode_state(state)
 
 		reward = 0.0
 		new_position = position
@@ -125,7 +128,7 @@ class FinancialMDP:
 
 		reward += self.price_delta[position][new_position][new_market]
 
-		next_state = self.encode_state(new_market, new_position)
+		next_state = FinancialMDP.encode_state(new_market, new_position)
 		return next_state, reward
 
 	def build_transition_reward_tables(self) -> tuple[np.ndarray, np.ndarray]:
@@ -138,7 +141,7 @@ class FinancialMDP:
 
 		for market in FinancialMDP.tendencies:
 			for position in FinancialMDP.positions:
-				state = self.encode_state(market, position)
+				state = FinancialMDP.encode_state(market, position)
 				valid_actions = list(map(lambda x: MarketActions(x), self.valid_actions(position)))
 				for action in valid_actions:
 					reward_base = 0.0
@@ -153,7 +156,7 @@ class FinancialMDP:
 						reward_base -= self.transaction_cost
 
 					for new_market in FinancialMDP.tendencies:
-						new_state = self.encode_state(new_market, new_position)
+						new_state = FinancialMDP.encode_state(new_market, new_position)
 						prob = self.market_transition[market][new_market]
 						T[state, action.value, new_state] += prob
 
