@@ -275,12 +275,12 @@ def plot_policy(policy: np.ndarray, n_market: int, n_positions: int, save_dir, t
 
 # ================= PLOT: TRAJECTORY (Melhorado) =================
 def plot_trajectory(env: FinancialMDP, policy: np.ndarray, save_dir, n_steps=50):
-    state = env.encode_state(MarketTendency.STABLE, MarketPositions.NO_POSITION)
+    state = FinancialMDP.encode_state(MarketTendency.STABLE, MarketPositions.NO_POSITION)
     states, actions, rewards, markets, positions = [], [], [], [], []
     total = 0
 
     for _ in range(n_steps):
-        market, position = env.decode_state(state)
+        market, position = FinancialMDP.decode_state(state)
         action = MarketActions(policy[state])
         next_state, reward = env.step(state, action)
 
@@ -438,7 +438,7 @@ def generate_metrics_report(
     # Políticas
     policy_ql = np.zeros(len(V_ql), dtype=int)
     for state in range(len(V_ql)):
-        valid = env.valid_actions(env.decode_state(state)[1])
+        valid = env.valid_actions(FinancialMDP.decode_state(state)[1])
         policy_ql[state] = max(valid, key=lambda a: Q_qlearning[state, a])
     
     agreement = np.mean(policy_bellman == policy_ql) * 100

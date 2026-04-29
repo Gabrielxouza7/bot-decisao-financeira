@@ -26,7 +26,7 @@ def value_iteration(
 
 		for state in range(n_states):
 			q_values = np.full(n_actions, -np.inf)
-			for action in env.valid_actions(env.decode_state(state)[1]):
+			for action in env.valid_actions(FinancialMDP.decode_state(state)[1]):
 				q_values[action] = np.sum(T[state, action, :] * (R[state, action, :] + gamma * V))
 			V[state] = max(q_values)
 
@@ -41,7 +41,7 @@ def value_iteration(
 	policy = np.zeros(n_states, dtype=int)
 	for state in range(n_states):
 		q_values = np.full(n_actions, -np.inf)
-		for action in env.valid_actions(env.decode_state(state)[1]):
+		for action in env.valid_actions(FinancialMDP.decode_state(state)[1]):
 			q_values[action] = np.sum(T[state, action, :] * (R[state, action, :] + gamma * V))
 		policy[state] = np.argmax(q_values)
 

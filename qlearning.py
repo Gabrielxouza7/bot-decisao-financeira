@@ -24,11 +24,11 @@ def qlearning(
 	for _ in range(n_episodes):
 		market = MarketTendency(np.random.randint(env.n_tendencies))
 		position = MarketPositions(np.random.randint(env.n_positions))
-		state = env.encode_state(market, position)
+		state = FinancialMDP.encode_state(market, position)
 		total_reward = 0.0
 
 		for _ in range(max_steps):
-			_, position = env.decode_state(state)
+			_, position = FinancialMDP.decode_state(state)
 
 			valid = env.valid_actions(position)
 			if np.random.random() < epsilon:
@@ -38,7 +38,7 @@ def qlearning(
 
 			next_state, reward = env.step(state, action)
 
-			valid_next_actions = env.valid_actions(env.decode_state(next_state)[1])
+			valid_next_actions = env.valid_actions((FinancialMDP.decode_state(next_state))[1])
 			best_next = max(Q[next_state, a] for a in valid_next_actions)
 
 			visit_counts[state, action.value] += 1

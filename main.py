@@ -64,7 +64,7 @@ print("\n[6/8] Executando Q-learning...")
 Q, rewards, epsilons = qlearning(env, n_episodes=10000, gamma=0.9)
 pi_ql = np.zeros(env.n_states, dtype=int)
 for state in range(env.n_states):
-    valid = env.valid_actions(env.decode_state(state)[1])
+    valid = env.valid_actions(FinancialMDP.decode_state(state)[1])
     pi_ql[state] = max(valid, key=lambda a: Q[state, a])
 print(f"     ✓ Treinado em 5000 episódios")
 
