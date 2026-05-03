@@ -15,7 +15,7 @@ def qlearning(
 		Retorna Q-table, recompensas por episódio e histórico de epsilon
 	"""
 
-	Q = np.full((env.n_states, env.n_actions), 1e-3, dtype=float)
+	Q = np.full((env.n_states, env.n_actions), 0, dtype=float)
 	visit_counts = np.zeros((env.n_states, env.n_actions), dtype=int)
 	episode_rewards = []
 	epsilons = []

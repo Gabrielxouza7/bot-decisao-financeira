@@ -1,4 +1,4 @@
-from environment import FinancialMDP, MarketActions, MarketPositions
+from environment import FinancialMDP, MarketActions, MarketPositions, MarketTendency
 from bellman import value_iteration
 from qlearning import qlearning
 from data import build_from_ticker
@@ -6,12 +6,13 @@ from evaluate import (
     plot_bellman_convergence,
     plot_bellman_vs_qlearning,
     plot_policies_comparison,
-    plot_learning_curve, 
+    plot_learning_curve,
     plot_value_map,
-    plot_policy, 
-    plot_trajectory, 
+    plot_policy,
+    plot_trajectory,
     compare_gammas,
-    compare_epsilons, 
+    compare_epsilons,
+    compare_alphas,
     evaluate_policy,
     create_run_dir,
     generate_metrics_report
@@ -53,7 +54,7 @@ print(f"     ✓ Convergência em {(t2-t1)*1000:.0f}ms")
 print("\n[5/8] Gerando visualizações Bellman...")
 msg_convergence = plot_bellman_convergence(vi_history, n_iter, save_dir=run_dir)
 print(f"     {msg_convergence.split(chr(10))[0]}")
-plot_value_map(V_star, env.n_tendencies, env.n_positions, save_dir=run_dir, 
+plot_value_map(V_star, env.n_tendencies, env.n_positions, save_dir=run_dir,
                title="Mapa de Valores — Bellman V*", method="bellman")
 plot_policy(pi_star, env.n_tendencies, env.n_positions, save_dir=run_dir,
            title="Política Ótima — Bellman", method = "bellman")
@@ -66,7 +67,7 @@ pi_ql = np.zeros(env.n_states, dtype=int)
 for state in range(env.n_states):
     valid = env.valid_actions(FinancialMDP.decode_state(state)[1])
     pi_ql[state] = max(valid, key=lambda a: Q[state, a])
-print(f"     ✓ Treinado em 5000 episódios")
+print(f"     ✓ Treinado em 10000 episódios")
 
 print("\n[7/8] Gerando visualizações Q-learning...")
 msg_qlearning = plot_learning_curve(rewards, save_dir=run_dir)
@@ -92,13 +93,17 @@ print("     ✓ bellman_vs_qlearning_values, policies_comparison → PNG")
 
 # ================= EXPERIMENTOS AVANÇADOS =================
 print("\n[8/8] Rodando experimentos comparativos...")
-print("     • Comparando impact de γ (gamma)...")
+print("     • Comparando impacto de γ (gamma)...")
 compare_gammas(env, save_dir=run_dir, gammas=[0.3, 0.6, 0.99], n_episodes=10000)
 print("       ✓ gamma_comparison.png")
 
 print("     • Comparando estratégias de exploração (ε)...")
 compare_epsilons(env, save_dir=run_dir, n_episodes=10000)
 print("       ✓ epsilon_comparison.png")
+
+print("     • Comparando impacto de α (alpha)...")
+compare_alphas(env, save_dir=run_dir, n_episodes=10000)
+print("       ✓ alpha_comparison.png")
 
 # ================= EXPERIMENTOS COM OUTRAS ESTRATÉGIAS =================
 
@@ -107,6 +112,18 @@ def ql_policy_fn(state, valid):
 
 def bellman_policy_fn(state, valid):
     return int(pi_star[state])
+
+def sintetic_policy_fn(state, valid):
+    mar, pos = FinancialMDP.decode_state(state)
+    
+    if mar == MarketTendency.FALLING and pos == MarketPositions.BOUGHT:
+        return MarketActions.SELL.value
+    elif mar == MarketTendency.STABLE and pos == MarketPositions.NO_POSITION:
+        return MarketActions.BUY.value
+    elif mar == MarketTendency.RISING and pos == MarketPositions.NO_POSITION:
+        return MarketActions.BUY.value
+    
+    return MarketActions.KEEP.value
 
 def cash_policy_fn(state, valid):
     return int(MarketActions.KEEP.value)
@@ -119,14 +136,16 @@ def random_policy_fn(state, valid):
     return int(np.random.choice(valid))
 
 ql_mean, ql_std = evaluate_policy(env, ql_policy_fn)
-bh_mean, bh_std = evaluate_policy(env, bellman_policy_fn)
+bellman_mean, bellman_std = evaluate_policy(env, bellman_policy_fn)
+sintetic_mean, sintetic_std = evaluate_policy(env, sintetic_policy_fn)
 cash_mean, cash_std = evaluate_policy(env, cash_policy_fn)
 bhld_mean, bhld_std = evaluate_policy(env, buy_hold_policy_fn)
 rnd_mean, rnd_std = evaluate_policy(env, random_policy_fn)
 
 print("\n[TEST] Comparação de políticas")
 print(f"  Q-learning   : {ql_mean:+.4f} ± {ql_std:.4f}")
-print(f"  Bellman      : {bh_mean:+.4f} ± {bh_std:.4f}")
+print(f"  Bellman      : {bellman_mean:+.4f} ± {bellman_std:.4f}")
+print(f"  Sintetic     : {sintetic_mean:+.4f} ± {sintetic_std:.4f}")
 print(f"  Cash-only    : {cash_mean:+.4f} ± {cash_std:.4f}")
 print(f"  Buy & Hold   : {bhld_mean:+.4f} ± {bhld_std:.4f}")
 print(f"  Random       : {rnd_mean:+.4f} ± {rnd_std:.4f}")
@@ -140,7 +159,8 @@ report = generate_metrics_report(
     V_star, pi_star, n_iter, vi_history,
     Q, rewards,
     ql_mean, ql_std,
-    bh_mean, bh_std,
+    bellman_mean, bellman_std,
+    sintetic_mean, sintetic_std,
     cash_mean, cash_std,
     bhld_mean, bhld_std,
     rnd_mean, rnd_std,
@@ -159,5 +179,6 @@ print("   ✓ policy_map.png                 (Política Q-learning)")
 print("   ✓ trajectory.png                 (Trajetória do agente)")
 print("   ✓ gamma_comparison.png           (Impacto de γ)")
 print("   ✓ epsilon_comparison.png         (Impacto de ε)")
+print("   ✓ alpha_comparison.png           (Impacto de α)")
 print("   ✓ metrics_report.txt             (Métricas em texto)")
 print("\n" + "=" * 70)

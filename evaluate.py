@@ -30,7 +30,7 @@ def create_run_dir(base_dir="runs"):
     return run_path
 
 
-# ================= PLOT: CONVERGÊNCIA BELLMAN (OBRIGATÓRIO) =================
+# ================= PLOT: CONVERGÊNCIA BELLMAN =================
 def plot_bellman_convergence(history: list, n_iter: int, save_dir, theta=1e-6):
     """
     Plot da convergência de Bellman: Delta vs Iteração
@@ -83,9 +83,12 @@ def plot_bellman_vs_qlearning(
     grid_qlearning = V_ql.reshape(n_market, n_positions)
     
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 4))
-    
+
+    vmin = min(np.min(grid_qlearning), np.min(grid_bellman))
+    vmax = max(np.max(grid_qlearning), np.max(grid_bellman))
+
     # Bellman
-    im1 = ax1.imshow(grid_bellman, cmap='RdYlGn', aspect='auto')
+    im1 = ax1.imshow(grid_bellman, cmap='RdYlGn', aspect='auto', vmin=vmin, vmax=vmax)
     ax1.set_xticks(range(n_positions))
     ax1.set_xticklabels(POSITION_NAMES, fontsize=10)
     ax1.set_yticks(range(n_market))
@@ -97,7 +100,7 @@ def plot_bellman_vs_qlearning(
             ax1.text(j, i, f'{grid_bellman[i,j]:.2f}', ha='center', va='center', fontsize=11)
     
     # Q-learning
-    im2 = ax2.imshow(grid_qlearning, cmap='RdYlGn', aspect='auto')
+    im2 = ax2.imshow(grid_qlearning, cmap='RdYlGn', aspect='auto', vmin=vmin, vmax=vmax)
     ax2.set_xticks(range(n_positions))
     ax2.set_xticklabels(POSITION_NAMES, fontsize=10)
     ax2.set_yticks(range(n_market))
@@ -109,13 +112,13 @@ def plot_bellman_vs_qlearning(
             ax2.text(j, i, f'{grid_qlearning[i,j]:.2f}', ha='center', va='center', fontsize=11)
     
     # Diferença
-    diff = np.abs(grid_bellman - grid_qlearning)
+    diff = np.abs(grid_bellman - grid_qlearning) / (np.abs(grid_bellman) + 1e-9) * 100
     im3 = ax3.imshow(diff, cmap='Blues', aspect='auto')
     ax3.set_xticks(range(n_positions))
     ax3.set_xticklabels(POSITION_NAMES, fontsize=10)
     ax3.set_yticks(range(n_market))
     ax3.set_yticklabels(MARKET_NAMES, fontsize=10)
-    ax3.set_title('|Bellman - Q-learning|', fontsize=12, fontweight='bold')
+    ax3.set_title('Erro relativo', fontsize=12, fontweight='bold')
     plt.colorbar(im3, ax=ax3, label='Erro')
     for i in range(n_market):
         for j in range(n_positions):
@@ -185,7 +188,7 @@ def plot_policies_comparison(
     return f"✓ Concordância de políticas: {agreement:.1f}%"
 
 
-# ================= PLOT: LEARNING CURVE (Melhorado) =================
+# ================= PLOT: LEARNING CURVE =================
 def plot_learning_curve(episode_rewards: list, save_dir, window=50, title="Q-learning"):
     smoothed = np.convolve(episode_rewards, np.ones(window)/window, mode='valid')
     
@@ -218,7 +221,7 @@ def plot_learning_curve(episode_rewards: list, save_dir, window=50, title="Q-lea
     return f"✓ Q-learning:\n  Recompensa inicial: {initial_mean:.2f}\n  Recompensa final: {final_mean:.2f}\n  Melhoria: {improvement:+.2f}"
 
 
-# ================= PLOT: VALUE MAP (Melhorado) =================
+# ================= PLOT: VALUE MAP =================
 def plot_value_map(V: np.ndarray, n_market: int, n_positions: int, method: str, save_dir, title="Mapa de Valores"):
     grid = V.reshape(n_market, n_positions)
     
@@ -244,7 +247,7 @@ def plot_value_map(V: np.ndarray, n_market: int, n_positions: int, method: str, 
     plt.close()
 
 
-# ================= PLOT: POLICY (Melhorado) =================
+# ================= PLOT: POLICY =================
 def plot_policy(policy: np.ndarray, n_market: int, n_positions: int, method: str, save_dir, title="Política Aprendida"):
     grid = policy.reshape(n_market, n_positions)
     
@@ -273,7 +276,7 @@ def plot_policy(policy: np.ndarray, n_market: int, n_positions: int, method: str
     plt.close()
 
 
-# ================= PLOT: TRAJECTORY (Melhorado) =================
+# ================= PLOT: TRAJECTORY =================
 def plot_trajectory(env: FinancialMDP, policy: np.ndarray, save_dir, n_steps=50):
     state = FinancialMDP.encode_state(MarketTendency.STABLE, MarketPositions.NO_POSITION)
     states, actions, rewards, markets, positions = [], [], [], [], []
@@ -392,6 +395,28 @@ def compare_epsilons(env: FinancialMDP, save_dir, n_episodes=2000):
     plt.savefig(os.path.join(save_dir, 'epsilon_comparison.png'), dpi=150, bbox_inches='tight')
     plt.close()
 
+# ================= PLOT: COMPARE ALPHAS =================
+def compare_alphas(env: FinancialMDP, save_dir, alphas=[0.1, 0.5, 0.9], n_episodes=2000):
+    from qlearning import qlearning
+
+    fig, ax = plt.subplots(figsize=(12, 5))
+
+    for alpha in alphas:
+        _, rewards, _ = qlearning(env, n_episodes=n_episodes, alpha=alpha)
+        window = 100
+        smoothed = np.convolve(rewards, np.ones(window)/window, mode='valid')
+        ax.plot(smoothed, label=f'α = {alpha}', linewidth=2.5)
+
+    ax.set_xlabel('Episódio', fontsize=12, fontweight='bold')
+    ax.set_ylabel('Recompensa (média móvel)', fontsize=12, fontweight='bold')
+    ax.set_title('Impacto de α (Taxa de Aprendizado) no Aprendizado', fontsize=13, fontweight='bold')
+    ax.legend(fontsize=11, loc='lower right')
+    ax.grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, 'alpha_comparison.png'), dpi=150, bbox_inches='tight')
+    plt.close()
+
 # ================= AVALIAR UMA POLÍTICA GENÉRICA =================
 def evaluate_policy(env: FinancialMDP, policy_fn, n_episodes=100, max_steps=200):
     episode_returns = []
@@ -419,7 +444,8 @@ def generate_metrics_report(
     V_bellman, policy_bellman, n_iter_bellman, history_bellman,
     Q_qlearning, episode_rewards, 
     ql_mean, ql_std,
-    bh_mean, bh_std,
+    bellman_mean, bellman_std,
+    sintetic_mean, sintetic_std,
     cash_mean, cash_std,
     bhld_mean, bhld_std,
     rnd_mean, rnd_std,
@@ -481,7 +507,8 @@ def generate_metrics_report(
 🔄 COMPARAÇÃO COM OUTRAS ESTRATÉGIAS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   • Q-learning : {ql_mean:+.4f} ± {ql_std:.4f}
-  • Bellman    : {bh_mean:+.4f} ± {bh_std:.4f}
+  • Bellman    : {bellman_mean:+.4f} ± {bellman_std:.4f}
+  • Sintetic   : {sintetic_mean:+.4f} ± {sintetic_std:.4f}
   • Cash-only  : {cash_mean:+.4f} ± {cash_std:.4f}
   • Buy & Hold : {bhld_mean:+.4f} ± {bhld_std:.4f}
   • Random     : {rnd_mean:+.4f} ± {rnd_std:.4f}
