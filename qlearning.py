@@ -6,6 +6,7 @@ def qlearning(
 	n_episodes=2000,
 	max_steps=200,
 	alpha=0.1,
+	alpha_decay=True,
 	gamma=0.9,
 	epsilon_start=1.0,
 	epsilon_end=0.1,
@@ -42,7 +43,7 @@ def qlearning(
 			best_next = max(Q[next_state, a] for a in valid_next_actions)
 
 			visit_counts[state, action.value] += 1
-			new_alpha = alpha / np.sqrt(visit_counts[state, action.value])
+			new_alpha = (alpha / np.sqrt(visit_counts[state, action.value])) if alpha_decay else alpha
 
 			Q[state, action.value] += new_alpha * (reward + (gamma * best_next) - Q[state, action.value])
 

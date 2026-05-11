@@ -402,7 +402,7 @@ def compare_alphas(env: FinancialMDP, save_dir, alphas=[0.1, 0.5, 0.9], n_episod
     fig, ax = plt.subplots(figsize=(12, 5))
 
     for alpha in alphas:
-        _, rewards, _ = qlearning(env, n_episodes=n_episodes, alpha=alpha)
+        _, rewards, _ = qlearning(env, n_episodes=n_episodes, alpha=alpha, alpha_decay=True if alpha == 0.1 else False)
         window = 100
         smoothed = np.convolve(rewards, np.ones(window)/window, mode='valid')
         ax.plot(smoothed, label=f'α = {alpha}', linewidth=2.5)
